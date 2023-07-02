@@ -57,7 +57,6 @@ class MensagemServiceTest {
 
             var mensagemArmazenada = mensagemService.criarMensagem(mensagem);
 
-            verify(mensagemRepository, times(1)).save(mensagem);
             assertThat(mensagemArmazenada)
                     .isInstanceOf(Mensagem.class)
                     .isNotNull();
@@ -67,6 +66,7 @@ class MensagemServiceTest {
                     .isNotNull();
             assertThat(mensagemArmazenada.getConteudo())
                     .isEqualTo(mensagem.getConteudo());
+            verify(mensagemRepository, times(1)).save(mensagem);
         }
     }
 

@@ -26,6 +26,7 @@ public class MensagemController {
 
     private final MensagemService mensagemService;
 
+
     @PostMapping
     public ResponseEntity<Mensagem> registrarMensagem(@Valid @RequestBody Mensagem mensagem) {
         log.info("requisição para registrar mensagem foi efetuada");

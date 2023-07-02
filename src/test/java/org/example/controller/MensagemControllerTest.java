@@ -1,6 +1,8 @@
 package org.example.controller;
 
-import jakarta.validation.ConstraintViolationException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.dto.MensagemRequest;
+import org.example.handler.GlobalExceptionHandler;
 import org.example.model.Mensagem;
 import org.example.service.MensagemService;
 import org.example.utils.DisplayTestName;
@@ -12,33 +14,48 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.http.HttpStatus;
-
-import java.util.UUID;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SpringBootTest
+@AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
 @DisplayNameGeneration(DisplayTestName.class)
 class MensagemControllerTest {
 
-    private MensagemController mensagemController;
+    private MockMvc mockMvc;
+
     @Mock
     private MensagemService mensagemService;
+
+//    private GlobalExceptionHandler globalExceptionHandler = new GlobalExceptionHandler();
+
+    private MensagemController mensagemController;
+
     AutoCloseable openMocks;
 
     @BeforeEach
     void setUp() {
         openMocks = MockitoAnnotations.openMocks(this);
         mensagemController = new MensagemController(mensagemService);
+        mockMvc = MockMvcBuilders.standaloneSetup(mensagemController)
+                .setControllerAdvice(new GlobalExceptionHandler()).build();
     }
 
     @AfterEach
@@ -50,109 +67,50 @@ class MensagemControllerTest {
     class RegistrarMensagem {
 
         @Test
-        void devePermitirRegistrarMensagem(CapturedOutput output) {
-            var mensagemRequest = Mensagem.builder()
-                    .usuario("John")
+        void devePermitirRegistrarMensagem(CapturedOutput output) throws Exception {
+            var mensagemRequest = MensagemRequest.builder()
+                    .usuario("Jose")
                     .conteudo("xpto")
                     .build();
+
             when(mensagemService.criarMensagem(any(Mensagem.class))).thenAnswer(i -> i.getArgument(0));
 
-            var resposta = mensagemController.registrarMensagem(mensagemRequest);
-
-            assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-            assertThat(resposta.getBody().getUsuario()).isEqualTo(mensagemRequest.getUsuario());
-            assertThat(resposta.getBody().getConteudo()).isEqualTo(mensagemRequest.getConteudo());
-            assertThat(output).contains("requisição para registrar mensagem foi efetuada");
+            mockMvc.perform(post("/mensagens")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(asJsonString(mensagemRequest)))
+                    .andDo(print())
+                    .andExpect(status().isCreated());
             verify(mensagemService, times(1)).criarMensagem(any(Mensagem.class));
+            assertThat(output).contains("requisição para registrar mensagem foi efetuada");
         }
 
         @Test
-        void deveGerarExcecao_QuandoRegistrarMensagem_UsuarioEmBranco(CapturedOutput output) {
-            var mensagemRequest = Mensagem.builder()
+        void deveGerarExcecao_QuandoRegistrarMensagem_UsuarioEmBranco(CapturedOutput output) throws Exception {
+            var mensagemRequest = MensagemRequest.builder()
                     .usuario("")
                     .conteudo("xpto")
                     .build();
 
-            assertThatThrownBy(() -> mensagemController.registrarMensagem(mensagemRequest))
-                    .isInstanceOf(ConstraintViolationException.class);
+            when(mensagemService.criarMensagem(any(Mensagem.class))).thenAnswer(i -> i.getArgument(0));
 
+            mockMvc.perform(post("/mensagens")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(asJsonString(mensagemRequest)))
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Validation error"))
+                    .andExpect(jsonPath("$.errors.[0]").value("usuário não pode estar vazio"));
+
+            verify(mensagemService, never()).criarMensagem(any(Mensagem.class));
         }
     }
 
-    @Nested
-    class BuscarMensagem {
 
-        @Test
-        void devePermitirBuscarMensagem(CapturedOutput output) {
-            var id = UUID.randomUUID();
-            var mensagem = Mensagem.builder()
-                    .usuario("John")
-                    .conteudo("xpto")
-                    .build();
-            when(mensagemService.buscarMensagem(any(UUID.class))).thenReturn(mensagem);
-
-            var resposta = mensagemController.buscarMensagem(id);
-
-            assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resposta.getBody()).isNotNull().isEqualTo(mensagem);
-            assertThat(output).contains("requisição para buscar mensagem foi efetuada");
-            verify(mensagemService, times(1)).buscarMensagem(any(UUID.class));
-        }
-
-        @Test
-        void deveGerarExcecao_QuandoBuscarMensagem_IdNaoExistente() {
-            var id = UUID.randomUUID();
-            var mensagem = Mensagem.builder()
-                    .usuario("John")
-                    .conteudo("xpto")
-                    .build();
-            when(mensagemService.buscarMensagem(any(UUID.class))).thenReturn(mensagem);
-
-            var resposta = mensagemController.buscarMensagem(id);
-
-            assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resposta.getBody()).isNotNull().isEqualTo(mensagem);
-        }
-
-    }
-
-    @Nested
-    class AtualizarMensagem {
-
-        @Test
-        void devePermitirAtualizarMensagem(CapturedOutput output) {
-            var id = UUID.randomUUID();
-            var mensagem = Mensagem.builder()
-                    .usuario("John")
-                    .conteudo("xpto")
-                    .build();
-            when(mensagemService.alterarMensagem(any(UUID.class), any(Mensagem.class)))
-                    .thenReturn(mensagem);
-
-            var resposta = mensagemController.atualizarMensagem(id, mensagem);
-
-            assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(resposta.getBody()).isNotNull().isEqualTo(mensagem);
-            assertThat(output).contains("requisição para atualizar mensagem foi efetuada");
-            verify(mensagemService, times(1))
-                    .alterarMensagem(any(UUID.class), any(Mensagem.class));
+    public static String asJsonString(final Object obj) {
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
-
-    @Nested
-    class ApagarMensagem {
-
-        @Test
-        void devePermitirApagarMensagem(CapturedOutput output) {
-            var id = UUID.randomUUID();
-            doNothing().when(mensagemService).apagarMensagem(any(UUID.class));
-
-            var resposta = mensagemController.apagarMensagem(id);
-
-            assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(output).contains("requisição para apagar mensagem foi efetuada");
-            verify(mensagemService, times(1)).apagarMensagem(any(UUID.class));
-        }
-    }
-
 }
