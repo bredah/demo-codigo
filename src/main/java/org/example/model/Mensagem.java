@@ -10,15 +10,15 @@ import lombok.Builder.Default;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Entity
 @Data
-@Builder
+@Builder(toBuilder=true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Jacksonized
@@ -34,9 +34,9 @@ public class Mensagem {
     @NotEmpty(message = "conteúdo não pode estar vazio")
     private String conteudo;
 
-    @Default
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSS")
-    private LocalDateTime dataCriacao = LocalDateTime.now();
+    @CreationTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSSSS")
+    private LocalDateTime dataCriacao;
 
     @Default
     private int gostei = 0;

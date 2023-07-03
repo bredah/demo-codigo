@@ -25,34 +25,28 @@ public class MensagemServiceImpl implements MensagemService {
     @Override
     public Mensagem buscarMensagem(UUID id) {
         return mensagemRepository.findById(id)
-                .orElseThrow(() -> new MensagemNotFoundException("Mensagem não encontrada"));
+                .orElseThrow(() -> new MensagemNotFoundException("mensagem não encontrada"));
     }
 
-    @Override
-    public Mensagem alterarMensagem(UUID id, Mensagem mensagem) {
-        var mensageEncontrada = mensagemRepository.findById(id)
-                .orElseThrow(() -> new MensagemNotFoundException("Mensagem não encontrada"));
-        if (mensageEncontrada.getId() != mensagem.getId()) {
-            throw new MensagemNotFoundException("Mensagem não apresenta o ID correto");
-        }
-        mensageEncontrada.setConteudo(mensagem.getConteudo());
-        return mensagemRepository.save(mensageEncontrada);
+@Override
+public Mensagem alterarMensagem(Mensagem mensagemAntiga, Mensagem mensagemNova) {
+    if (!mensagemAntiga.getId().equals(mensagemNova.getId())) {
+        throw new MensagemNotFoundException("mensagem não apresenta o ID correto");
     }
+    mensagemAntiga.setConteudo(mensagemNova.getConteudo());
+    return mensagemRepository.save(mensagemAntiga);
+}
 
-    @Override
-    public void apagarMensagem(UUID id) {
-        mensagemRepository.findById(id)
-                .orElseThrow(() -> new MensagemNotFoundException("Mensagem não encontrada"));
-        mensagemRepository.deleteById(id);
-    }
+@Override
+public void apagarMensagem(UUID id) {
+    mensagemRepository.deleteById(id);
+}
 
-    @Override
-    public Mensagem incrementarGostei(UUID id) {
-        var mensageEncontrada = mensagemRepository.findById(id)
-                .orElseThrow(() -> new MensagemNotFoundException("Mensagem não encontrada"));
-        mensageEncontrada.setGostei(mensageEncontrada.getGostei() + 1);
-        return mensagemRepository.save(mensageEncontrada);
-    }
+@Override
+public Mensagem incrementarGostei(Mensagem mensagem) {
+    mensagem.setGostei(mensagem.getGostei() + 1);
+    return mensagemRepository.save(mensagem);
+}
 
     @Override
     public Page<Mensagem> listarMensagens(Pageable pageable) {

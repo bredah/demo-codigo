@@ -4,8 +4,8 @@ import lombok.*;
 
 @Builder
 public class MensagemRequest {
-    @Getter
+    @Getter @Setter
     private String usuario;
-    @Getter
+    @Getter @Setter
     private String conteudo;
 }

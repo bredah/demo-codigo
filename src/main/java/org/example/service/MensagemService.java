@@ -9,8 +9,8 @@ import java.util.UUID;
 public interface MensagemService {
     Mensagem criarMensagem(Mensagem mensagem);
     Mensagem buscarMensagem(UUID id);
-    Mensagem alterarMensagem(UUID id, Mensagem mensagem);
+    Mensagem alterarMensagem(Mensagem mensagemAntiga, Mensagem mensagemNova);
     void apagarMensagem(UUID id);
-    Mensagem incrementarGostei(UUID id);
+    Mensagem incrementarGostei(Mensagem mensagem);
     Page<Mensagem> listarMensagens(Pageable pageable);
 }

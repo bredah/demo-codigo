@@ -1,11 +1,11 @@
 package org.example.service;
 
-import org.example.utils.MensagemHelper;
 import jakarta.transaction.Transactional;
 import org.example.exception.MensagemNotFoundException;
-import org.example.utils.DisplayTestName;
 import org.example.model.Mensagem;
 import org.example.repository.MensagemRepository;
+import org.example.utils.DisplayTestName;
+import org.example.utils.MensagemHelper;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -86,7 +86,7 @@ class MensagemServiceIT {
 
             assertThatThrownBy(() -> mensagemService.buscarMensagem(id))
                     .isInstanceOf(MensagemNotFoundException.class)
-                    .hasMessage("Mensagem não encontrada");
+                    .hasMessage("mensagem não encontrada");
         }
     }
 
@@ -99,7 +99,7 @@ class MensagemServiceIT {
             var mensagemModificada = mensagemOriginal;
             mensagemModificada.setConteudo("abcd");
 
-            var mensagemObtida = mensagemService.alterarMensagem(mensagemOriginal.getId(), mensagemModificada);
+            var mensagemObtida = mensagemService.alterarMensagem(mensagemOriginal, mensagemModificada);
 
             assertThat(mensagemObtida)
                     .isInstanceOf(Mensagem.class)
@@ -113,25 +113,15 @@ class MensagemServiceIT {
         }
 
         @Test
-        void deveGerarExcecao_QuandoAlterarMensagem_IdNaoExistente() {
-            var id = UUID.randomUUID();
-            var mensagemOriginal = MensagemHelper.gerarMensagem();
-            mensagemOriginal.setId(id);
-
-            assertThatThrownBy(() -> mensagemService.alterarMensagem(id, mensagemOriginal))
-                    .isInstanceOf(MensagemNotFoundException.class)
-                    .hasMessage("Mensagem não encontrada");
-        }
-
-        @Test
         void deveGerarExcecao_QuandoAlterarMensagem_IdNaoCoincide() {
-            var mensagemOriginal = MensagemHelper.registrarMensagem(mensagemRepository);
-            var mensagemModificada = MensagemHelper.registrarMensagem(mensagemRepository);
+            var mensagemAntiga = MensagemHelper.registrarMensagem(mensagemRepository);
+            var mensagemNova = mensagemAntiga.toBuilder().build();
+            mensagemNova.setId(UUID.randomUUID());
 
             assertThatThrownBy(
-                    () -> mensagemService.alterarMensagem(mensagemOriginal.getId(), mensagemModificada))
+                    () -> mensagemService.alterarMensagem(mensagemAntiga, mensagemNova))
                     .isInstanceOf(MensagemNotFoundException.class)
-                    .hasMessage("Mensagem não apresenta o ID correto");
+                    .hasMessage("mensagem não apresenta o ID correto");
         }
 
     }
@@ -145,14 +135,6 @@ class MensagemServiceIT {
             mensagemService.apagarMensagem(mensagemRegistrada.getId());
         }
 
-        @Test
-        void deveGerarExcecao_QuandoApagarMensagem_IdNaoExistente() {
-            var id = UUID.randomUUID();
-            assertThatThrownBy(() -> mensagemService.apagarMensagem(id))
-                    .isInstanceOf(MensagemNotFoundException.class)
-                    .hasMessage("Mensagem não encontrada");
-        }
-
     }
 
     @Nested
@@ -162,18 +144,9 @@ class MensagemServiceIT {
         void devePermitirIncrementarGostei() {
             var mensagemRegistrada = MensagemHelper.registrarMensagem(mensagemRepository);
 
-            var mensagemRecebida = mensagemService.incrementarGostei(mensagemRegistrada.getId());
+            var mensagemRecebida = mensagemService.incrementarGostei(mensagemRegistrada);
 
             assertThat(mensagemRecebida.getGostei()).isEqualTo(1);
-        }
-
-        @Test
-        void deveGerarExcecao_QuandoIncrementarGostei_IdNaoExistente() {
-            var id = UUID.randomUUID();
-
-            assertThatThrownBy(() -> mensagemService.incrementarGostei(id))
-                    .isInstanceOf(MensagemNotFoundException.class)
-                    .hasMessage("Mensagem não encontrada");
         }
 
     }
