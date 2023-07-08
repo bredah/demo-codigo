@@ -1,3 +1,4 @@
+
 package org.example.service;
 
 import org.example.model.Mensagem;
@@ -10,7 +11,7 @@ public interface MensagemService {
     Mensagem criarMensagem(Mensagem mensagem);
     Mensagem buscarMensagem(UUID id);
     Mensagem alterarMensagem(Mensagem mensagemAntiga, Mensagem mensagemNova);
-    void apagarMensagem(UUID id);
+    boolean apagarMensagem(UUID id);
     Mensagem incrementarGostei(Mensagem mensagem);
     Page<Mensagem> listarMensagens(Pageable pageable);
 }

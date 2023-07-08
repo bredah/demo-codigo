@@ -1,11 +1,12 @@
+
 package org.example.dto;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 @Builder
+@Data
 public class MensagemRequest {
-    @Getter @Setter
-    private String usuario;
-    @Getter @Setter
-    private String conteudo;
+  private String usuario;
+  private String conteudo;
 }

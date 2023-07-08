@@ -1,13 +1,16 @@
 package org.example.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import jakarta.transaction.Transactional;
+import java.util.UUID;
 import org.example.exception.MensagemNotFoundException;
 import org.example.model.Mensagem;
 import org.example.repository.MensagemRepository;
 import org.example.utils.DisplayTestName;
 import org.example.utils.MensagemHelper;
 import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -15,167 +18,137 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 @SpringBootTest
 @AutoConfigureTestDatabase
 @Transactional
 @DisplayNameGeneration(DisplayTestName.class)
 class MensagemServiceIT {
 
-    @Autowired
-    private MensagemRepository mensagemRepository;
+  @Autowired
+  private MensagemRepository mensagemRepository;
 
-    @Autowired
-    private MensagemService mensagemService;
+  @Autowired
+  private MensagemService mensagemService;
 
-    @Nested
-    class RegistrarMensagem {
-        @Test
-        void devePermitirRegistrarMensagem() {
-            var mensagem = MensagemHelper.gerarMensagem();
+  @Test
+  void devePermitirRegistrarMensagem() {
+    var mensagem = MensagemHelper.gerarMensagem();
 
-            var mensagemArmazenada = mensagemService.criarMensagem(mensagem);
+    var mensagemArmazenada = mensagemService.criarMensagem(mensagem);
 
-            assertThat(mensagemArmazenada)
-                    .isInstanceOf(Mensagem.class)
-                    .isNotNull();
-            assertThat(mensagemArmazenada.getUsuario())
-                    .isNotNull()
-                    .isNotEmpty()
-                    .isEqualTo(mensagem.getUsuario());
-            assertThat(mensagemArmazenada.getId())
-                    .isNotNull();
-            assertThat(mensagemArmazenada.getConteudo())
-                    .isNotNull()
-                    .isNotEmpty()
-                    .isEqualTo(mensagem.getConteudo());
-        }
-    }
+    assertThat(mensagemArmazenada)
+        .isNotNull()
+        .isInstanceOf(Mensagem.class);
+    assertThat(mensagemArmazenada.getId())
+        .isNotNull();
+    assertThat(mensagemArmazenada.getUsuario())
+        .isNotNull()
+        .isNotEmpty()
+        .isEqualTo(mensagem.getUsuario());
+    assertThat(mensagemArmazenada.getConteudo())
+        .isNotNull()
+        .isNotEmpty()
+        .isEqualTo(mensagem.getConteudo());
+  }
 
+@Test
+void devePermitirBuscarMensagem() {
+  var mensagem = MensagemHelper.registrarMensagem(mensagemRepository);
 
-    @Nested
-    class BuscarMensagem {
-        @Test
-        void devePermitirBuscarMensagem() {
-            var mensagem = MensagemHelper.registrarMensagem(mensagemRepository);
+  var mensagemObtidaOptional = mensagemRepository.findById(mensagem.getId());
 
-            var mensagemObtidaOptional = mensagemRepository.findById(mensagem.getId());
+  assertThat(mensagemObtidaOptional)
+      .isPresent()
+      .containsSame(mensagem);
+  mensagemObtidaOptional.ifPresent(mensagemObtida -> {
+    assertThat(mensagemObtida.getId())
+        .isEqualTo(mensagem.getId());
+    assertThat(mensagemObtida.getUsuario())
+        .isEqualTo(mensagem.getUsuario());
+    assertThat(mensagemObtida.getConteudo())
+        .isEqualTo(mensagem.getConteudo());
+    assertThat(mensagemObtida.getDataCriacao())
+        .isEqualTo(mensagem.getDataCriacao());
+  });
+}
 
-            assertThat(mensagemObtidaOptional)
-                    .isPresent()
-                    .containsSame(mensagem);
-            mensagemObtidaOptional.ifPresent(mensagemObtida -> {
-                assertThat(mensagemObtida.getId())
-                        .isEqualTo(mensagem.getId());
-                assertThat(mensagemObtida.getUsuario())
-                        .isEqualTo(mensagem.getUsuario());
-                assertThat(mensagemObtida.getConteudo())
-                        .isEqualTo(mensagem.getConteudo());
-                assertThat(mensagemObtida.getDataCriacao())
-                        .isEqualTo(mensagem.getDataCriacao());
-            });
-        }
+@Test
+void deveGerarExcecao_QuandoBuscarMensagem_IdNaoExistente() {
+  var id = UUID.fromString("50537a52-1ab2-11ee-be56-0242ac120002");
 
-        @Test
-        void deveGerarExcecao_QuandoBuscarMensagem_IdNaoExistente() {
-            var id = UUID.randomUUID();
+  assertThatThrownBy(() -> mensagemService.buscarMensagem(id))
+      .isInstanceOf(MensagemNotFoundException.class)
+      .hasMessage("mensagem não encontrada");
+}
 
-            assertThatThrownBy(() -> mensagemService.buscarMensagem(id))
-                    .isInstanceOf(MensagemNotFoundException.class)
-                    .hasMessage("mensagem não encontrada");
-        }
-    }
+@Test
+void devePermirirAlterarMensagem() {
+  var mensagemOriginal = MensagemHelper.registrarMensagem(mensagemRepository);
+  var mensagemModificada = mensagemOriginal.toBuilder().build();
+  mensagemModificada.setConteudo("abcd");
 
-    @Nested
-    class AlterarMensagem {
+  var mensagemObtida = mensagemService.alterarMensagem(mensagemOriginal, mensagemModificada);
 
-        @Test
-        void devePermirirAlterarMensagem() {
-            var mensagemOriginal = MensagemHelper.registrarMensagem(mensagemRepository);
-            var mensagemModificada = mensagemOriginal;
-            mensagemModificada.setConteudo("abcd");
+  assertThat(mensagemObtida)
+      .isInstanceOf(Mensagem.class)
+      .isNotNull();
+  assertThat(mensagemObtida.getId())
+      .isEqualTo(mensagemModificada.getId());
+  assertThat(mensagemObtida.getUsuario())
+      .isEqualTo(mensagemModificada.getUsuario());
+  assertThat(mensagemObtida.getConteudo())
+      .isEqualTo(mensagemModificada.getConteudo());
+}
 
-            var mensagemObtida = mensagemService.alterarMensagem(mensagemOriginal, mensagemModificada);
+@Test
+void deveGerarExcecao_QuandoAlterarMensagem_IdNaoCoincide() {
+  var id = UUID.fromString("69f38a60-1ab2-11ee-be56-0242ac120002");
+  var mensagemAntiga = MensagemHelper.registrarMensagem(mensagemRepository);
+  var mensagemNova = mensagemAntiga.toBuilder().build();
+  mensagemNova.setId(id);
 
-            assertThat(mensagemObtida)
-                    .isInstanceOf(Mensagem.class)
-                    .isNotNull();
-            assertThat(mensagemObtida.getId())
-                    .isEqualTo(mensagemModificada.getId());
-            assertThat(mensagemObtida.getUsuario())
-                    .isEqualTo(mensagemModificada.getUsuario());
-            assertThat(mensagemObtida.getConteudo())
-                    .isEqualTo(mensagemModificada.getConteudo());
-        }
+  assertThatThrownBy(
+      () -> mensagemService.alterarMensagem(mensagemAntiga, mensagemNova))
+      .isInstanceOf(MensagemNotFoundException.class)
+      .hasMessage("mensagem não apresenta o ID correto");
+}
 
-        @Test
-        void deveGerarExcecao_QuandoAlterarMensagem_IdNaoCoincide() {
-            var mensagemAntiga = MensagemHelper.registrarMensagem(mensagemRepository);
-            var mensagemNova = mensagemAntiga.toBuilder().build();
-            mensagemNova.setId(UUID.randomUUID());
+@Test
+void devePermitirApagarMensagem() {
+  var mensagemRegistrada = MensagemHelper.registrarMensagem(mensagemRepository);
+  var resultado = mensagemService.apagarMensagem(mensagemRegistrada.getId());
+  assertThat(resultado).isTrue();
+}
 
-            assertThatThrownBy(
-                    () -> mensagemService.alterarMensagem(mensagemAntiga, mensagemNova))
-                    .isInstanceOf(MensagemNotFoundException.class)
-                    .hasMessage("mensagem não apresenta o ID correto");
-        }
+@Test
+void devePermitirIncrementarGostei() {
+  var mensagemRegistrada = MensagemHelper.registrarMensagem(mensagemRepository);
 
-    }
+  var mensagemRecebida = mensagemService.incrementarGostei(mensagemRegistrada);
 
-    @Nested
-    class ApagarMensagem {
+  assertThat(mensagemRecebida.getGostei()).isEqualTo(1);
+}
 
-        @Test
-        void devePermitirApagarMensagem() {
-            var mensagemRegistrada = MensagemHelper.registrarMensagem(mensagemRepository);
-            mensagemService.apagarMensagem(mensagemRegistrada.getId());
-        }
+@Test
+void devePermitirListarMensagens() {
+  MensagemHelper.registrarMensagem(mensagemRepository);
+  MensagemHelper.registrarMensagem(mensagemRepository);
 
-    }
+  Page<Mensagem> mensagens = mensagemService.listarMensagens(Pageable.unpaged());
 
-    @Nested
-    class IncrementarGostei {
+  assertThat(mensagens).hasSize(2);
+  assertThat(mensagens.getContent())
+      .asList()
+      .allSatisfy(mensagem -> {
+        assertThat(mensagem).isNotNull();
+        assertThat(mensagem).isInstanceOf(Mensagem.class);
+      });
+}
 
-        @Test
-        void devePermitirIncrementarGostei() {
-            var mensagemRegistrada = MensagemHelper.registrarMensagem(mensagemRepository);
+@Test
+void devePermitirListarTodasAsMensagens_QuandoNaoExisteRegistro() {
+  Page<Mensagem> mensagens = mensagemService.listarMensagens(Pageable.unpaged());
+  assertThat(mensagens).isEmpty();
+}
 
-            var mensagemRecebida = mensagemService.incrementarGostei(mensagemRegistrada);
-
-            assertThat(mensagemRecebida.getGostei()).isEqualTo(1);
-        }
-
-    }
-
-    @Nested
-    class ListarMensagens {
-
-        @Test
-        void devePermitirListarMensagens() {
-            MensagemHelper.registrarMensagem(mensagemRepository);
-            MensagemHelper.registrarMensagem(mensagemRepository);
-
-            Page<Mensagem> mensagens = mensagemService.listarMensagens(Pageable.unpaged());
-
-            assertThat(mensagens).hasSize(2);
-            assertThat(mensagens.getContent())
-                    .asList()
-                    .allSatisfy(mensagem -> {
-                        assertThat(mensagem).isNotNull();
-                        assertThat(mensagem).isInstanceOf(Mensagem.class);
-                    });
-        }
-
-        @Test
-        void devePermitirListarTodasAsMensagens_QuandoNaoExisteRegistro() {
-            Page<Mensagem> mensagens = mensagemService.listarMensagens(Pageable.unpaged());
-
-            assertThat(mensagens).isEmpty();
-        }
-
-    }
 }

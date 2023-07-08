@@ -17,6 +17,9 @@ integration-test:
 ## Run All Tests
 test: unit-test integration-test
 
+test-smoke:
+	mvn clean test -Pintegration-test -Dgroups=smoke
+
 ## Package application
 package:
 	mvn package

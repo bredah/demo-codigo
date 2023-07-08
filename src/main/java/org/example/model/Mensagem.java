@@ -1,3 +1,4 @@
+
 package org.example.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -18,28 +19,28 @@ import java.util.UUID;
 
 @Entity
 @Data
-@Builder(toBuilder=true)
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Jacksonized
 public class Mensagem {
 
-    @Id
-    @GenericGenerator(name = "uuid")
-    private UUID id;
+  @Id
+  @GenericGenerator(name = "uuid")
+  private UUID id;
 
-    @NotEmpty(message = "usuário não pode estar vazio")
-    private String usuario;
+  @NotEmpty(message = "usuário não pode estar vazio")
+  private String usuario;
 
-    @NotEmpty(message = "conteúdo não pode estar vazio")
-    private String conteudo;
+  @NotEmpty(message = "conteúdo não pode estar vazio")
+  private String conteudo;
 
-    @CreationTimestamp
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSSSS")
-    private LocalDateTime dataCriacao;
+  @CreationTimestamp
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSSSS")
+  private LocalDateTime dataCriacao;
 
-    @Default
-    private int gostei = 0;
+  @Default
+  private int gostei = 0;
 
 }
 

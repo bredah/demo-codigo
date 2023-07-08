@@ -1,3 +1,4 @@
+
 package org.example.service;
 
 import lombok.RequiredArgsConstructor;
@@ -38,8 +39,9 @@ public Mensagem alterarMensagem(Mensagem mensagemAntiga, Mensagem mensagemNova) 
 }
 
 @Override
-public void apagarMensagem(UUID id) {
+public boolean apagarMensagem(UUID id) {
     mensagemRepository.deleteById(id);
+    return true;
 }
 
 @Override

@@ -1,7 +1,16 @@
 package org.example.controller;
 
+import static io.restassured.RestAssured.given;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
+
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
+import java.util.UUID;
 import org.example.model.Mensagem;
 import org.example.utils.DisplayTestName;
 import org.example.utils.MensagemHelper;
@@ -15,15 +24,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
-
-import java.util.UUID;
-
-import static io.restassured.RestAssured.given;
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayNameGeneration(DisplayTestName.class)
@@ -112,7 +112,7 @@ class MensagemControllerIT {
                     .then()
                     .statusCode(HttpStatus.CREATED.value())
                     .header("Content-Type", notNullValue())
-                    .header("Content-Type", "application/json")
+                    .header("Content-Type", startsWith("application/json"))
                     .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
         }
 
