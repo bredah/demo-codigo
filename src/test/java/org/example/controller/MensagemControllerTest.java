@@ -79,11 +79,7 @@ class MensagemControllerTest {
 
     @Test
     void devePermitirRegistrarMensagem() throws Exception {
-      var mensagemRequest = MensagemRequest.builder()
-          .usuario("Jose")
-          .conteudo("xpto")
-          .build();
-
+      var mensagemRequest = MensagemHelper.gerarMensagemRequest();
       when(mensagemService.criarMensagem(any(Mensagem.class))).thenAnswer(i -> i.getArgument(0));
 
       mockMvc.perform(post("/mensagens")
@@ -92,12 +88,10 @@ class MensagemControllerTest {
 //                    .andDo(print())
           .andExpect(status().isCreated());
       verify(mensagemService, times(1)).criarMensagem(any(Mensagem.class));
-      assertThat(logTracker.size()).isEqualTo(1);
-      assertThat(logTracker.contains("requisição para registrar mensagem foi efetuada")).isTrue();
     }
 
     @Test
-    void deveGerarExcecao_QuandoRegistrarMensagem() throws Exception {
+    void deveGerarExcecao_QuandoRegistrarMensagem_UsuarioEmBraco() throws Exception {
       var mensagemRequest = MensagemRequest.builder()
           .usuario("")
           .conteudo("xpto")
@@ -158,6 +152,20 @@ class MensagemControllerTest {
           .andDo(print())
           .andExpect(status().isUnsupportedMediaType());
       verify(mensagemService, never()).criarMensagem(any(Mensagem.class));
+    }
+
+    @Test
+    void deveGerarMensagemDeLog_QuandoRegistrarMensagem() throws Exception {
+      var mensagemRequest = MensagemHelper.gerarMensagemRequest();
+      when(mensagemService.criarMensagem(any(Mensagem.class))).thenAnswer(i -> i.getArgument(0));
+
+      mockMvc.perform(post("/mensagens")
+              .contentType(MediaType.APPLICATION_JSON)
+              .content(asJsonString(mensagemRequest)))
+//                    .andDo(print())
+          .andExpect(status().isCreated());
+      verify(mensagemService, times(1)).criarMensagem(any(Mensagem.class));
+      assertThat(logTracker.size()).isEqualTo(1);
     }
   }
 

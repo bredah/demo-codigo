@@ -2,14 +2,11 @@
 package org.example.controller;
 
 import jakarta.validation.Valid;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.dto.ErrorResponse;
 import org.example.model.Mensagem;
 import org.example.service.MensagemService;
+import org.example.utils.ConverterId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -48,14 +45,11 @@ public class MensagemController {
       produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<?> buscarMensagem(@PathVariable String id) {
     log.info("requisição para buscar mensagem foi efetuada");
-    UUID uuid;
-    try {
-      uuid = UUID.fromString(id);
-    } catch (IllegalArgumentException e) {
-      List<String> errors = Collections.singletonList("UUID inválido");
-      var errorResponse = new ErrorResponse("validation error", errors);
-      return ResponseEntity.badRequest().body(errorResponse);
+    var converterId = new ConverterId(id);
+    if (converterId.hasError()) {
+      return ResponseEntity.badRequest().body(converterId.getError());
     }
+    var uuid = converterId.getId();
     var mensagemEncontrada = mensagemService.buscarMensagem(uuid);
     return new ResponseEntity<>(mensagemEncontrada, HttpStatus.OK);
   }
@@ -74,37 +68,45 @@ public class MensagemController {
 
   @PutMapping(
       value = "/{id}",
+      consumes = MediaType.APPLICATION_JSON_VALUE,
       produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<?> atualizarMensagem(
       @PathVariable String id,
       @RequestBody @Valid Mensagem mensagem) {
     log.info("requisição para atualizar mensagem foi efetuada");
-    UUID uuid = null;
-    try {
-      uuid = UUID.fromString(id);
-    } catch (IllegalArgumentException e) {
-      List<String> errors = Collections.singletonList("UUID inválido");
-      var errorResponse = new ErrorResponse("validation error", errors);
-      return ResponseEntity.badRequest().body(errorResponse);
+    var converterId = new ConverterId(id);
+    if (converterId.hasError()) {
+      return ResponseEntity.badRequest().body(converterId.getError());
     }
+    var uuid = converterId.getId();
     var mensagemAntiga = mensagemService.buscarMensagem(uuid);
     var mensagemAtualizada = mensagemService.alterarMensagem(mensagemAntiga, mensagem);
     return new ResponseEntity<>(mensagemAtualizada, HttpStatus.OK);
   }
 
   @PutMapping("/{id}/gostei")
-  public ResponseEntity<Mensagem> incrementarGostei(@PathVariable UUID id) {
+  public ResponseEntity<?> incrementarGostei(@PathVariable String id) {
     log.info("requisição para incrementar gostei foi efetuada");
-    var mensagem = mensagemService.buscarMensagem(id);
+    var converterId = new ConverterId(id);
+    if (converterId.hasError()) {
+      return ResponseEntity.badRequest().body(converterId.getError());
+    }
+    var uuid = converterId.getId();
+    var mensagem = mensagemService.buscarMensagem(uuid);
     var mensagemAtualizada = mensagemService.incrementarGostei(mensagem);
     return new ResponseEntity<>(mensagemAtualizada, HttpStatus.OK);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<String> apagarMensagem(@PathVariable UUID id) {
+  public ResponseEntity<?> apagarMensagem(@PathVariable String id) {
     log.info("requisição para apagar mensagem foi efetuada");
-    mensagemService.buscarMensagem(id);
-    mensagemService.apagarMensagem(id);
+    var converterId = new ConverterId(id);
+    if (converterId.hasError()) {
+      return ResponseEntity.badRequest().body(converterId.getError());
+    }
+    var uuid = converterId.getId();
+    mensagemService.buscarMensagem(uuid);
+    mensagemService.apagarMensagem(uuid);
     return new ResponseEntity<>("mensagem removida", HttpStatus.OK);
   }
 
