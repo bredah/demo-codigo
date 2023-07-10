@@ -2,10 +2,8 @@
 package org.example.handler;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.example.dto.ErrorResponse;
-import org.example.exception.MensagemNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,12 +30,12 @@ public class GlobalExceptionHandler {
         .body(errorResponse);
   }
 
-  @ExceptionHandler(MensagemNotFoundException.class)
-  public ResponseEntity<ErrorResponse> handleMensagemExistenteException(
-      MensagemNotFoundException ex) {
-    var errorResponse = new ErrorResponse("requição apresenta erro",
-        Collections.singletonList(ex.getMessage()));
-
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-  }
+//  @ExceptionHandler(MensagemNotFoundException.class)
+//  public ResponseEntity<ErrorResponse> handleMensagemExistenteException(
+//      MensagemNotFoundException ex) {
+//    var errorResponse = new ErrorResponse("requição apresenta erro",
+//        Collections.singletonList(ex.getMessage()));
+//
+//    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+//  }
 }

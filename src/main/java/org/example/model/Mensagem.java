@@ -4,7 +4,10 @@ package org.example.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.validation.constraints.NotEmpty;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -13,9 +16,6 @@ import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Data
@@ -39,8 +39,18 @@ public class Mensagem {
   @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSSSS")
   private LocalDateTime dataCriacao;
 
+  @CreationTimestamp
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSSSS")
+  private LocalDateTime dataAlteracao;
+
   @Default
   private int gostei = 0;
 
+  @PrePersist
+  public void prePersist() {
+    var timestamp = LocalDateTime.now();
+    dataCriacao = timestamp;
+    dataAlteracao = timestamp;
+  }
 }
 

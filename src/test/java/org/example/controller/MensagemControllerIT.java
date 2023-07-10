@@ -1,23 +1,24 @@
+
 package org.example.controller;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import java.util.UUID;
-import org.example.model.Mensagem;
 import org.example.utils.DisplayTestName;
 import org.example.utils.MensagemHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -27,283 +28,388 @@ import org.springframework.test.context.jdbc.Sql;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayNameGeneration(DisplayTestName.class)
+@Sql(scripts = {"/clean.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class MensagemControllerIT {
 
-    @LocalServerPort
-    private int port;
+  @LocalServerPort
+  private int port;
 
-    @BeforeEach
-    public void setup() {
-        RestAssured.port = port;
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-        RestAssured.filters(new AllureRestAssured());
+  @BeforeEach
+  public void setup() {
+    RestAssured.port = port;
+    RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+    RestAssured.filters(new AllureRestAssured());
+  }
+
+  @Nested
+  class RegistrarMensagem {
+
+    @Test
+    void devePermitirRegistrarMensagem() {
+      var mensagemRequest = MensagemHelper.gerarMensagemRequest();
+
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .body(mensagemRequest)
+          .when()
+          .post("/mensagens")
+          .then()
+          .statusCode(HttpStatus.CREATED.value())
+          .body("$", hasKey("id"))
+          .body("$", hasKey("usuario"))
+          .body("$", hasKey("conteudo"))
+          .body("$", hasKey("dataCriacao"))
+          .body("$", hasKey("gostei"))
+          .body("usuario", equalTo(mensagemRequest.getUsuario()))
+          .body("conteudo", equalTo(mensagemRequest.getConteudo()));
     }
 
-    @Nested
-    @Sql(scripts = {"/clean.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-    class RegistrarMesangem {
+    @Test
+    void deveGerarExcecao_QuandoRegistrarMensagem_UsuarioEmBranco() {
+      var mensagemRequest = MensagemHelper.gerarMensagemRequest();
+      mensagemRequest.setUsuario("");
 
-        @Test
-        @Tag("smoke")
-        void devePermitirRegistrarMensagem() {
-            var mensagemRequest = MensagemHelper.gerarMensagemRequest();
-
-            given()
-                    .contentType(MediaType.APPLICATION_JSON_VALUE)
-                    .body(mensagemRequest)
-                    .when()
-                    .post("/mensagens")
-                    .then()
-                    .statusCode(HttpStatus.CREATED.value())
-                    .body("$", hasKey("id"))
-                    .body("$", hasKey("usuario"))
-                    .body("$", hasKey("conteudo"))
-                    .body("$", hasKey("dataCriacao"))
-                    .body("$", hasKey("gostei"))
-                    .body("usuario", equalTo(mensagemRequest.getUsuario()))
-                    .body("conteudo", equalTo(mensagemRequest.getConteudo()));
-        }
-
-        @Test
-        void deveGerarExcecao_QuandoRegistrarMensagem_UsuarioEmBranco() {
-            var mensagemRequest = MensagemHelper.gerarMensagemRequest();
-            mensagemRequest.setUsuario("");
-
-            given()
-                    .contentType(MediaType.APPLICATION_JSON_VALUE)
-                    .body(mensagemRequest)
-                    .when()
-                    .post("/mensagens")
-                    .then()
-                    .statusCode(HttpStatus.BAD_REQUEST.value())
-                    .body("$", hasKey("message"))
-                    .body("$", hasKey("errors"))
-                    .body("message", equalTo("Validation error"))
-                    .body("errors[0]", equalTo("usuário não pode estar vazio"));
-        }
-
-        @Test
-        void deveGerarExcecao_QuandoRegistrarMensagem_ConteudoEmBranco() {
-            var mensagemRequest = MensagemHelper.gerarMensagemRequest();
-            mensagemRequest.setConteudo("");
-
-            given()
-                    .contentType(MediaType.APPLICATION_JSON_VALUE)
-                    .body(mensagemRequest)
-                    .when()
-                    .post("/mensagens")
-                    .then()
-                    .statusCode(HttpStatus.BAD_REQUEST.value())
-                    .body("$", hasKey("message"))
-                    .body("$", hasKey("errors"))
-                    .body("message", equalTo("Validation error"))
-                    .body("errors[0]", equalTo("conteúdo não pode estar vazio"));
-        }
-
-        @Test
-        void devePermitirRegistrarMensagem_ValidarSchema() {
-            var mensagemRequest = MensagemHelper.gerarMensagemRequest();
-
-            given()
-                    .header("Content-Type", "application/json")
-                    .body(mensagemRequest)
-                    .when()
-                    .post("/mensagens")
-                    .then()
-                    .statusCode(HttpStatus.CREATED.value())
-                    .header("Content-Type", notNullValue())
-                    .header("Content-Type", startsWith("application/json"))
-                    .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
-        }
-
-        @Test
-        void devePermitirRegistrarMensagem_CapturandoResposta() {
-            var mensagemRequest = MensagemHelper.gerarMensagemRequest();
-
-            var mensageRecebida = given()
-                    .header("Content-Type", "application/json")
-                    .body(mensagemRequest)
-                    .when()
-                    .post("/mensagens")
-                    .then()
-                    .statusCode(HttpStatus.CREATED.value())
-                    .extract()
-                    .as(Mensagem.class);
-
-            assertThat(mensageRecebida.getId())
-                    .isNotNull();
-        }
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .body(mensagemRequest)
+          .when()
+          .post("/mensagens")
+          .then()
+          .statusCode(HttpStatus.BAD_REQUEST.value())
+          .body("$", hasKey("message"))
+          .body("$", hasKey("errors"))
+          .body("message", equalTo("Validation error"))
+          .body("errors[0]", equalTo("usuário não pode estar vazio"));
     }
 
-    @Nested
-    @Sql(scripts = {"/clean.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-    class BuscarMensagem {
-        @Test
-        @Sql(scripts = {"/data.sql"})
-        void devePermitirBuscarMensagem() {
-            var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
-            given()
-                    .contentType(MediaType.APPLICATION_JSON_VALUE)
-                    .when()
-                    .get("/mensagens/{id}", id)
-                    .then()
-                    .statusCode(HttpStatus.OK.value())
-                    .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
-        }
+    @Test
+    void deveGerarExcecao_QuandoRegistrarMensagem_ConteudoEmBranco() {
+      var mensagemRequest = MensagemHelper.gerarMensagemRequest();
+      mensagemRequest.setConteudo("");
 
-        @Test
-        void deveGerarExcecao_QuandoBuscarMensagem_IdNaoExistente() {
-            var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
-            given()
-                    .contentType(MediaType.APPLICATION_JSON_VALUE)
-                    .when()
-                    .get("/mensagens/{id}", id)
-                    .then()
-                    .statusCode(HttpStatus.BAD_REQUEST.value())
-                    .body("$", hasKey("message"))
-                    .body("$", hasKey("errors"))
-                    .body("message", equalTo("requição apresenta erro"))
-                    .body("errors[0]", equalTo("mensagem não encontrada"));
-        }
-
-        @Nested
-        @Sql(scripts = {"/clean.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-        class AlterarMensagem {
-            @Test
-            @Sql(scripts = {"/data.sql"})
-            void devePermirirAlterarMensagem() {
-                var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
-                var mensagem = MensagemHelper.gerarMensagemCompleta();
-                mensagem.setId(UUID.fromString(id));
-
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .body(mensagem)
-                        .when()
-                        .put("/mensagens/{id}", id)
-                        .then()
-                        .statusCode(HttpStatus.OK.value())
-                        .body("conteudo", equalTo(mensagem.getConteudo()))
-                        .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
-            }
-
-            @Test
-            void deveGerarExcecao_QuandoAlterar_IdNaoCoincide() {
-                var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
-                var mensagem = MensagemHelper.gerarMensagemCompleta();
-
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .body(mensagem)
-                        .when()
-                        .put("/mensagens/{id}", id)
-                        .then()
-                        .statusCode(HttpStatus.BAD_REQUEST.value())
-                        .body("$", hasKey("message"))
-                        .body("$", hasKey("errors"))
-                        .body("message", equalTo("requição apresenta erro"))
-                        .body("errors[0]", equalTo("mensagem não encontrada"));
-            }
-        }
-
-        @Nested
-        @Sql(scripts = {"/clean.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-        class RemoverMensagem {
-            @Test
-            @Sql(scripts = {"/data.sql"})
-            void devePermitirApagarMensagem() {
-                var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .when()
-                        .delete("/mensagens/{id}", id)
-                        .then()
-                        .statusCode(HttpStatus.OK.value())
-                        .body(equalTo("mensagem removida"));
-            }
-
-            @Test
-            void deveGerarExcecao_QuandoApagarMensagem_IdNaoExistente() {
-                var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .when()
-                        .delete("/mensagens/{id}", id)
-                        .then()
-                        .statusCode(HttpStatus.BAD_REQUEST.value())
-                        .body("$", hasKey("message"))
-                        .body("$", hasKey("errors"))
-                        .body("message", equalTo("requição apresenta erro"))
-                        .body("errors[0]", equalTo("mensagem não encontrada"));
-            }
-
-        }
-
-        @Nested
-        @Sql(scripts = {"/clean.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-        class IncrementarGostei {
-
-            @Test
-            @Sql(scripts = {"/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-            void devePermitirIncrementarGostei() {
-                var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .when()
-                        .put("/mensagens/{id}/gostei", id)
-                        .then()
-                        .statusCode(HttpStatus.OK.value())
-                        .body("gostei", equalTo(1))
-                        .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
-            }
-
-            @Test
-            void deveGerarExcecao_QuandoIncrementarGostei_IdNaoExistente() {
-                var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .when()
-                        .put("/mensagens/{id}/gostei", id)
-                        .then()
-                        .statusCode(HttpStatus.BAD_REQUEST.value())
-                        .body("$", hasKey("message"))
-                        .body("$", hasKey("errors"))
-                        .body("message", equalTo("requição apresenta erro"))
-                        .body("errors[0]", equalTo("mensagem não encontrada"));
-            }
-        }
-
-        @Nested
-        @Sql(scripts = {"/clean.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-        class ListarMensagem {
-            @Test
-            @Sql(scripts = {"/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-            void devePermitirListarMensagens() {
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .when()
-                        .get("/mensagens")
-                        .then()
-                        .statusCode(HttpStatus.OK.value())
-                        .body(matchesJsonSchemaInClasspath("./schemas/MensagemPaginationSchema.json"))
-                        .body("number", equalTo(0))
-                        .body("size", equalTo(10))
-                        .body("totalElements", equalTo(5));
-            }
-
-            @Test
-            void devePermitirListarMensagens_QuandoNaoExisteRegistro() {
-                given()
-                        .contentType(MediaType.APPLICATION_JSON_VALUE)
-                        .when()
-                        .get("/mensagens")
-                        .then()
-                        .statusCode(HttpStatus.OK.value())
-                        .body(matchesJsonSchemaInClasspath("./schemas/MensagemPaginationSchema.json"))
-                        .body("number", equalTo(0))
-                        .body("size", equalTo(10))
-                        .body("totalElements", equalTo(0));
-            }
-        }
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .body(mensagemRequest)
+          .when()
+          .post("/mensagens")
+          .then()
+          .statusCode(HttpStatus.BAD_REQUEST.value())
+          .body("$", hasKey("message"))
+          .body("$", hasKey("errors"))
+          .body("message", equalTo("Validation error"))
+          .body("errors[0]", equalTo("conteúdo não pode estar vazio"));
     }
+
+    @Test
+    void deveGerarExcecao_QuandoRegistrarMensagem_CamposInvalidos() throws JsonProcessingException {
+      var jsonPayload = new ObjectMapper().readTree(
+          "{\"ping\": \"ping\", \"quack\": \"adalberto\"}");
+
+      given()
+          .contentType(ContentType.JSON)
+          .body(jsonPayload)
+          .when()
+          .post("/mensagens")
+          .then()
+          .statusCode(HttpStatus.BAD_REQUEST.value())
+          .body("$", hasKey("message"))
+          .body("$", hasKey("errors"))
+          .body("message", equalTo("Validation error"))
+          .body("errors[0]", equalTo("usuário não pode estar vazio"))
+          .body("errors[1]", equalTo("conteúdo não pode estar vazio"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoRegistrarMensagem_PayloadComXml() {
+      String xmlPayload = "<mensagem><usuario>John</usuario><conteudo>Conteúdo da mensagem</conteudo></mensagem>";
+
+      given()
+          .contentType(MediaType.APPLICATION_XML_VALUE)
+          .body(xmlPayload)
+          .when()
+          .post("/mensagens")
+          .then()
+          .statusCode(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value());
+    }
+
+    @Test
+    void devePermitirRegistrarMensagem_ValidarSchema() {
+      var mensagemRequest = MensagemHelper.gerarMensagemRequest();
+
+      given()
+          .header("Content-Type", "application/json")
+          .body(mensagemRequest)
+          .when()
+          .post("/mensagens")
+          .then()
+          .statusCode(HttpStatus.CREATED.value())
+          .header("Content-Type", notNullValue())
+          .header("Content-Type", startsWith("application/json"))
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
+    }
+  }
+
+  @Nested
+  class BuscarMensagem {
+
+    @Test
+    @Sql(scripts = {"/clean.sql",
+        "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    void devePermitirBuscarMensagem() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .get("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoBuscarMensagem_IdNaoExistente() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .get("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.NOT_FOUND.value())
+          .body(equalTo("mensagem não encontrada"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoBuscarMensagem_IdInvalido() {
+      var id = "2";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .get("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.BAD_REQUEST.value())
+          .body(equalTo("ID inválido"));
+    }
+  }
+
+  @Nested
+  class AlterarMensagem {
+
+    @Test
+    @Sql(scripts = {"/clean.sql",
+        "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    void devePermirirAlterarMensagem() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
+      var mensagem = MensagemHelper.gerarMensagemCompleta();
+      mensagem.setId(UUID.fromString(id));
+
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .body(mensagem)
+          .when()
+          .put("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body("conteudo", equalTo(mensagem.getConteudo()))
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoAlterarMensagem_IdNaoCoincide() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
+      var mensagem = MensagemHelper.gerarMensagemCompleta();
+
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .body(mensagem)
+          .when()
+          .put("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.NOT_FOUND.value())
+          .body(equalTo("mensagem não encontrada"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoAlterarMensagem_IdInvalido() {
+      var id = "5";
+      var mensagem = MensagemHelper.gerarMensagemCompleta();
+
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .body(mensagem)
+          .when()
+          .put("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.BAD_REQUEST.value())
+          .body(equalTo("ID inválido"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoAlterarMensagem_PayloadComXml() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
+      String xmlPayload = "<mensagem><usuario>John</usuario><conteudo>Conteúdo da mensagem</conteudo></mensagem>";
+
+      given()
+          .contentType(ContentType.XML)
+          .body(xmlPayload)
+          .when()
+          .put("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value());
+    }
+  }
+
+  @Nested
+  class ApagarMensagem {
+
+    @Test
+    @Sql(scripts = {"/clean.sql",
+        "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    void devePermitirApagarMensagem() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .delete("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body(equalTo("mensagem removida"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoApagarMensagem_IdNaoExistente() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .delete("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.NOT_FOUND.value())
+          .body(equalTo("mensagem não encontrada"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoIncrementarGostei_IdInvalido() {
+      var id = "2";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .delete("/mensagens/{id}", id)
+          .then()
+          .statusCode(HttpStatus.BAD_REQUEST.value())
+          .body(equalTo("ID inválido"));
+    }
+
+  }
+
+  @Nested
+  class IncrementarGostei {
+
+    @Test
+    @Sql(scripts = {"/clean.sql",
+        "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    void devePermitirIncrementarGostei() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .put("/mensagens/{id}/gostei", id)
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body("gostei", equalTo(1))
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoIncrementarGostei_IdNaoExistente() {
+      var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .put("/mensagens/{id}/gostei", id)
+          .then()
+          .statusCode(HttpStatus.NOT_FOUND.value())
+          .body(equalTo("mensagem não encontrada"));
+    }
+
+    @Test
+    void deveGerarExcecao_QuandoIncrementarGostei_IdInvalido() {
+      var id = "2";
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .put("/mensagens/{id}/gostei", id)
+          .then()
+          .statusCode(HttpStatus.BAD_REQUEST.value())
+          .body(equalTo("ID inválido"));
+    }
+  }
+
+  @Nested
+  class ListarMensagem {
+
+    @Test
+    @Sql(scripts = {"/clean.sql",
+        "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    void devePermitirListarMensagens() {
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .get("/mensagens")
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemPaginationSchema.json"))
+          .body("number", equalTo(0))
+          .body("size", equalTo(10))
+          .body("totalElements", equalTo(5));
+    }
+
+    @Test
+    @Sql(scripts = {"/clean.sql",
+        "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    void devePermitirListarMensagens_QuandoInformadoParametros() {
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .queryParam("page", "2")
+          .queryParam("size", "2")
+          .when()
+          .get("/mensagens")
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemPaginationSchema.json"))
+          .body("number", equalTo(2))
+          .body("size", equalTo(2))
+          .body("totalElements", equalTo(5));
+    }
+
+    @Test
+    void devePermitirListarMensagens_QuandoNaoExisteRegistro() {
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .when()
+          .get("/mensagens")
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemPaginationSchema.json"))
+          .body("number", equalTo(0))
+          .body("size", equalTo(10))
+          .body("totalElements", equalTo(0));
+    }
+
+    @Test
+    void devePermitirListarMensagens_QuandoReceberParametrosInvalidos() {
+      given()
+          .contentType(MediaType.APPLICATION_JSON_VALUE)
+          .queryParam("page", "2")
+          .queryParam("ping", "pong")
+          .when()
+          .get("/mensagens")
+          .then()
+          .statusCode(HttpStatus.OK.value())
+          .body(matchesJsonSchemaInClasspath("./schemas/MensagemPaginationSchema.json"))
+          .body("number", equalTo(2))
+          .body("size", equalTo(10))
+          .body("totalElements", equalTo(0));
+    }
+  }
+
 }

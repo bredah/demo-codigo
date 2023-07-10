@@ -24,11 +24,13 @@ public abstract class MensagemHelper {
     }
 
     public static Mensagem gerarMensagemCompleta() {
+        var timestamp = LocalDateTime.now();
         return Mensagem.builder()
                 .id(UUID.randomUUID())
                 .usuario("joe")
                 .conteudo("xpto test")
-                .dataCriacao(LocalDateTime.now())
+                .dataCriacao(timestamp)
+                .dataAlteracao(timestamp)
                 .build();
     }
 

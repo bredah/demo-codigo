@@ -17,7 +17,7 @@
     "dataCriacao": {
       "type": "string"
     },
-    "atualizadoEm": {
+    "dataAlteracao": {
       "type": "string"
     },
     "gostei": {

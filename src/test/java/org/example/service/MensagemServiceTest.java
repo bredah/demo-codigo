@@ -124,11 +124,14 @@ class MensagemServiceTest {
       var mensagemNova = mensagemAntiga;
       mensagemNova.setConteudo("abcd");
 
+      when(mensagemRepository.findById(any(UUID.class)))
+          .thenReturn(Optional.of(mensagemAntiga));
+
       when(mensagemRepository.save(any(Mensagem.class)))
           .thenAnswer(i -> i.getArgument(0));
 
       var mensagemObtida = mensagemService
-          .alterarMensagem(mensagemAntiga, mensagemNova);
+          .alterarMensagem(id, mensagemNova);
 
       assertThat(mensagemObtida)
           .isInstanceOf(Mensagem.class)
@@ -151,9 +154,9 @@ class MensagemServiceTest {
       mensagemNova.setId(UUID.randomUUID());
 
       assertThatThrownBy(
-          () -> mensagemService.alterarMensagem(mensagemAntiga, mensagemNova))
+          () -> mensagemService.alterarMensagem(id, mensagemNova))
           .isInstanceOf(MensagemNotFoundException.class)
-          .hasMessage("mensagem não apresenta o ID correto");
+          .hasMessage("mensagem não encontrada");
       verify(mensagemRepository, never()).save(any(Mensagem.class));
     }
 
@@ -164,18 +167,19 @@ class MensagemServiceTest {
 
     @Test
     void devePermitirApagarMensagem() {
-      var id = UUID.randomUUID();
+      var id = UUID.fromString("51fa607a-1e61-11ee-be56-0242ac120002");
       var mensagem = MensagemHelper.gerarMensagem();
-
+      mensagem.setId(id);
       when(mensagemRepository.findById(id))
           .thenReturn(Optional.of(mensagem));
       doNothing()
           .when(mensagemRepository).deleteById(id);
 
-      mensagemService.apagarMensagem(id);
+      var resultado = mensagemService.apagarMensagem(id);
 
-      verify(mensagemRepository, times(1))
-          .deleteById(id);
+      assertThat(resultado).isTrue();
+      verify(mensagemRepository, times(1)).findById(any(UUID.class));
+      verify(mensagemRepository, times(1)).delete(any(Mensagem.class));
     }
 
   }
@@ -188,10 +192,13 @@ class MensagemServiceTest {
       var mensagem = MensagemHelper.gerarMensagem();
       mensagem.setId(UUID.randomUUID());
 
+      when(mensagemRepository.findById(any(UUID.class)))
+          .thenReturn(Optional.of(mensagem));
+
       when(mensagemRepository.save(any(Mensagem.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
-      var mensagemRecebida = mensagemService.incrementarGostei(mensagem);
+      var mensagemRecebida = mensagemService.incrementarGostei(mensagem.getId());
 
       verify(mensagemRepository, times(1)).save(mensagemRecebida);
       assertThat(mensagemRecebida.getGostei()).isEqualTo(1);

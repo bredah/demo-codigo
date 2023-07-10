@@ -2,11 +2,12 @@
 package org.example.controller;
 
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.exception.MensagemNotFoundException;
 import org.example.model.Mensagem;
 import org.example.service.MensagemService;
-import org.example.utils.ConverterId;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,69 +46,73 @@ public class MensagemController {
       produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<?> buscarMensagem(@PathVariable String id) {
     log.info("requisição para buscar mensagem foi efetuada");
-    var converterId = new ConverterId(id);
-    if (converterId.hasError()) {
-      return ResponseEntity.badRequest().body(converterId.getError());
+    try {
+      var uuid = UUID.fromString(id);
+      var mensagemEncontrada = mensagemService.buscarMensagem(uuid);
+      return new ResponseEntity<>(mensagemEncontrada, HttpStatus.OK);
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().body("ID inválido");
+    } catch (MensagemNotFoundException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
-    var uuid = converterId.getId();
-    var mensagemEncontrada = mensagemService.buscarMensagem(uuid);
-    return new ResponseEntity<>(mensagemEncontrada, HttpStatus.OK);
   }
 
-  @GetMapping(
-      value = "",
-      produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<Page<Mensagem>> listarMensagens(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size) {
-    Pageable pageable = PageRequest.of(page, size);
-    log.info("requisição para listar mensagens foi efetuada: Página={}, Tamanho={}", page, size);
-    Page<Mensagem> mensagens = mensagemService.listarMensagens(pageable);
-    return new ResponseEntity<>(mensagens, HttpStatus.OK);
-  }
+@GetMapping(
+    value = "",
+    produces = MediaType.APPLICATION_JSON_VALUE)
+public ResponseEntity<Page<Mensagem>> listarMensagens(
+    @RequestParam(defaultValue = "0") int page,
+    @RequestParam(defaultValue = "10") int size) {
+  Pageable pageable = PageRequest.of(page, size);
+  log.info("requisição para listar mensagens foi efetuada: Página={}, Tamanho={}", page, size);
+  Page<Mensagem> mensagens = mensagemService.listarMensagens(pageable);
+  return new ResponseEntity<>(mensagens, HttpStatus.OK);
+}
 
-  @PutMapping(
-      value = "/{id}",
-      consumes = MediaType.APPLICATION_JSON_VALUE,
-      produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<?> atualizarMensagem(
-      @PathVariable String id,
-      @RequestBody @Valid Mensagem mensagem) {
-    log.info("requisição para atualizar mensagem foi efetuada");
-    var converterId = new ConverterId(id);
-    if (converterId.hasError()) {
-      return ResponseEntity.badRequest().body(converterId.getError());
-    }
-    var uuid = converterId.getId();
-    var mensagemAntiga = mensagemService.buscarMensagem(uuid);
-    var mensagemAtualizada = mensagemService.alterarMensagem(mensagemAntiga, mensagem);
+@PutMapping(
+    value = "/{id}",
+    consumes = MediaType.APPLICATION_JSON_VALUE,
+    produces = MediaType.APPLICATION_JSON_VALUE)
+public ResponseEntity<?> atualizarMensagem(
+    @PathVariable String id,
+    @RequestBody @Valid Mensagem mensagem) {
+  log.info("requisição para atualizar mensagem foi efetuada");
+  try {
+    var uuid = UUID.fromString(id);
+    var mensagemAtualizada = mensagemService.alterarMensagem(uuid, mensagem);
     return new ResponseEntity<>(mensagemAtualizada, HttpStatus.OK);
+  } catch (IllegalArgumentException e) {
+    return ResponseEntity.badRequest().body("ID inválido");
+  } catch (MensagemNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
   }
+}
 
-  @PutMapping("/{id}/gostei")
-  public ResponseEntity<?> incrementarGostei(@PathVariable String id) {
-    log.info("requisição para incrementar gostei foi efetuada");
-    var converterId = new ConverterId(id);
-    if (converterId.hasError()) {
-      return ResponseEntity.badRequest().body(converterId.getError());
-    }
-    var uuid = converterId.getId();
-    var mensagem = mensagemService.buscarMensagem(uuid);
-    var mensagemAtualizada = mensagemService.incrementarGostei(mensagem);
+@PutMapping("/{id}/gostei")
+public ResponseEntity<?> incrementarGostei(@PathVariable String id) {
+  log.info("requisição para incrementar gostei foi efetuada");
+  try {
+    var uuid = UUID.fromString(id);
+    var mensagemAtualizada = mensagemService.incrementarGostei(uuid);
     return new ResponseEntity<>(mensagemAtualizada, HttpStatus.OK);
+  } catch (IllegalArgumentException e) {
+    return ResponseEntity.badRequest().body("ID inválido");
+  } catch (MensagemNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
   }
+}
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<?> apagarMensagem(@PathVariable String id) {
-    log.info("requisição para apagar mensagem foi efetuada");
-    var converterId = new ConverterId(id);
-    if (converterId.hasError()) {
-      return ResponseEntity.badRequest().body(converterId.getError());
-    }
-    var uuid = converterId.getId();
-    mensagemService.buscarMensagem(uuid);
+@DeleteMapping("/{id}")
+public ResponseEntity<?> apagarMensagem(@PathVariable String id) {
+  log.info("requisição para apagar mensagem foi efetuada");
+  try {
+    var uuid = UUID.fromString(id);
     mensagemService.apagarMensagem(uuid);
     return new ResponseEntity<>("mensagem removida", HttpStatus.OK);
+  } catch (IllegalArgumentException e) {
+    return ResponseEntity.badRequest().body("ID inválido");
+  } catch (MensagemNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
   }
-
+}
 }
