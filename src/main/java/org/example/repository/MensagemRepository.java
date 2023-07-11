@@ -12,7 +12,8 @@ import java.util.UUID;
 
 @Repository
 public interface MensagemRepository extends JpaRepository<Mensagem, UUID> {
-    @Query("SELECT m FROM Mensagem m ORDER BY m.dataCriacao DESC")
-    Page<Mensagem> listarMensagens(Pageable pageable);
+
+  @Query("SELECT m FROM Mensagem m ORDER BY m.dataCriacao DESC")
+  Page<Mensagem> listarMensagens(Pageable pageable);
 }
 
