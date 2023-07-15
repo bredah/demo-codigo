@@ -1,19 +1,11 @@
 
 package org.example.controller;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.startsWith;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-import java.util.UUID;
 import org.example.utils.DisplayTestName;
 import org.example.utils.MensagemHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +17,12 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
+
+import java.util.UUID;
+
+import static io.restassured.RestAssured.given;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayNameGeneration(DisplayTestName.class)
@@ -115,8 +113,8 @@ class MensagemControllerIT {
           .body("$", hasKey("message"))
           .body("$", hasKey("errors"))
           .body("message", equalTo("Validation error"))
-          .body("errors[0]", equalTo("usuário não pode estar vazio"))
-          .body("errors[1]", equalTo("conteúdo não pode estar vazio"));
+          .body("errors[0]", equalTo("conteúdo não pode estar vazio"))
+          .body("errors[1]", equalTo("usuário não pode estar vazio"));
     }
 
     @Test

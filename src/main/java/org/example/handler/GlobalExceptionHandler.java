@@ -2,6 +2,7 @@
 package org.example.handler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.example.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ public class GlobalExceptionHandler {
     for (FieldError error : ex.getBindingResult().getFieldErrors()) {
       errors.add(error.getDefaultMessage());
     }
+    Collections.sort(errors);
     var errorResponse =
         new ErrorResponse("Validation error", errors);
     return ResponseEntity
@@ -29,13 +31,4 @@ public class GlobalExceptionHandler {
         .contentType(MediaType.APPLICATION_JSON)
         .body(errorResponse);
   }
-
-//  @ExceptionHandler(MensagemNotFoundException.class)
-//  public ResponseEntity<ErrorResponse> handleMensagemExistenteException(
-//      MensagemNotFoundException ex) {
-//    var errorResponse = new ErrorResponse("requição apresenta erro",
-//        Collections.singletonList(ex.getMessage()));
-//
-//    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-//  }
 }

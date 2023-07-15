@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -141,7 +140,7 @@ void deveGerarExcecao_QuandoRegistrarMensagem_CamposInvalidos() throws Exception
   mockMvc.perform(post("/mensagens")
           .contentType(MediaType.APPLICATION_JSON)
           .content(asJsonString(mensagemRequest)))
-      .andDo(print())
+//      .andDo(print())
       .andExpect(status().isBadRequest())
       .andExpect(result -> {
         String json = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
@@ -160,7 +159,7 @@ void deveGerarExcecao_QuandoRegistrarMensagem_PayloadComXml() throws Exception {
   mockMvc.perform(post("/mensagens")
           .contentType(MediaType.APPLICATION_XML)
           .content(xmlPayload))
-      .andDo(print())
+//      .andDo(print())
       .andExpect(status().isUnsupportedMediaType());
   verify(mensagemService, never()).criarMensagem(any(Mensagem.class));
 }
@@ -213,7 +212,7 @@ void deveGerarMensagemDeLog_QuandoRegistrarMensagem() throws Exception {
 
       mockMvc.perform(get("/mensagens/{id}", id)
               .contentType(MediaType.APPLICATION_JSON))
-          .andDo(print())
+//          .andDo(print())
           .andExpect(status().isNotFound());
       verify(mensagemService, times(1))
           .buscarMensagem(any(UUID.class));
@@ -299,7 +298,7 @@ void deveGerarMensagemDeLog_QuandoRegistrarMensagem() throws Exception {
       mockMvc.perform(put("/mensagens/{id}", id)
               .contentType(MediaType.APPLICATION_JSON)
               .content(asJsonString(mensagemRequest)))
-          .andDo(print())
+//          .andDo(print())
           .andExpect(status().isBadRequest())
           .andExpect(content().string("ID inválido"));
       verify(mensagemService, never())
@@ -314,7 +313,7 @@ void deveGerarMensagemDeLog_QuandoRegistrarMensagem() throws Exception {
       mockMvc.perform(put("/mensagens/{id}", id)
               .contentType(MediaType.APPLICATION_XML)
               .content(xmlPayload))
-          .andDo(print())
+//          .andDo(print())
           .andExpect(status().isUnsupportedMediaType());
       verify(mensagemService, never()).alterarMensagem(any(UUID.class), any(Mensagem.class));
     }

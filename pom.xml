@@ -10,6 +10,14 @@
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
+  <repositories>
+    <repository>
+      <id>central-sonatype</id>
+      <name>Central Sonatype</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+  </repositories>
+
   <groupId>org.example</groupId>
   <artifactId>demo-codigo</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -132,7 +140,26 @@
       <artifactId>log-tracker</artifactId>
       <version>1.0.1</version>
     </dependency>
+    <!-- cucumber -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <version>7.13.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+      <version>7.13.0</version>
+      <scope>test</scope>
+    </dependency>
 
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <version>1.9.3</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -148,9 +175,11 @@
         <configuration>
           <excludes>
             <exclude>**/IT*.java</exclude>
+            <exclude>**/CucumberTest.java</exclude>
           </excludes>
           <properties>
-            <configurationParameters>junit.jupiter.displayname.generator.default.remove-parent=true
+            <configurationParameters>
+              junit.jupiter.displayname.generator.default.remove-parent=true
             </configurationParameters>
             <property>
               <name>listener</name>
@@ -201,12 +230,34 @@
               </includes>
               <excludes>
                 <exclude>**/*Test.java</exclude>
+                <exclude>**/CucumberIT.java</exclude>
               </excludes>
             </configuration>
           </plugin>
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>system-test</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.1.0</version>
+            <configuration combine.self="override">
+              <includes>
+                <include>**/CucumberIT.java</include>
+              </includes>
+              <properties>
+                <configurationParameters>
+                  cucumber.junit-platform.naming-strategy=long
+                </configurationParameters>
+              </properties>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
-
 </project>
