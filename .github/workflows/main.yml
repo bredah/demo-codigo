@@ -20,6 +20,7 @@ jobs:
       uses: actions/setup-java@v3
       with:
         java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'adopt'
         cache: maven
 
     - name: Executar os testes
@@ -42,6 +43,8 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+          cache: maven
       
       - name: Executar Testes Unitários
         if: ${{ matrix.test-group == 'unit' }}
@@ -63,6 +66,8 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'adopt'
+          cache: maven
 
       - name: Empacotar aplicação
         run: mvn package
