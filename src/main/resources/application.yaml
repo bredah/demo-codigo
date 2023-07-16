@@ -23,11 +23,12 @@ spring:
   sql:
     init:
       mode: always
+
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info
 logging:
   level:
     root: INFO
