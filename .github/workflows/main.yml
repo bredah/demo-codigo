@@ -14,12 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Configurar Ambiente
       uses: actions/setup-java@v3
       with:
         java-version: ${{ env.JAVA_VERSION }}
+        cache: maven
 
     - name: Executar os testes
       run: mvn build
