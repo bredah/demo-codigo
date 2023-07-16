@@ -24,7 +24,7 @@ jobs:
         cache: maven
 
     - name: Executar os testes
-      run: mvn build
+      run: mvn compile
 
   test:
     name: Testes
