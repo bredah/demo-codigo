@@ -34,4 +34,3 @@ logging:
     root: INFO
     org.example: DEBUG
     org.springframework: INFO
-    org.hibernate.SQL: INFO

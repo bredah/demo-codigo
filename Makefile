@@ -11,7 +11,7 @@ package:
 start-api:
 	./mvnw clean spring-boot:run
 
-start-jar:
+start-jar: package
 	java -jar ./target/demo-codigo-*.jar
 
 start-docker:
