@@ -54,6 +54,11 @@ jobs:
         if: ${{ matrix.test-group == 'integration' }}
         run: mvn test -Pintegration-test
 
+      - name: Criar o branch gh-pages
+        run: |
+          git checkout -B gh-pages
+          git push origin gh-pages
+
       - name: Get Allure history
         uses: actions/checkout@v2
         if: always()
