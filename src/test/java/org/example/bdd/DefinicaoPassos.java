@@ -18,8 +18,6 @@ import static org.hamcrest.Matchers.equalTo;
 public class DefinicaoPassos {
 
     private Response response;
-    private ValidatableResponse json;
-    private RequestSpecification request;
 
     private Mensagem mensagemResponse;
 

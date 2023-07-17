@@ -1,5 +1,6 @@
 server:
   port: 8080
+  shutdown: graceful
   servlet:
     encoding:
       charset: UTF-8
@@ -23,14 +24,20 @@ spring:
   sql:
     init:
       mode: always
-
+  lifecycle:
+      timeout-per-shutdown-phase: "5s"
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,shutdown
+  endpoint:
+    shutdown:
+      enabled: true
+
+
 logging:
   level:
     root: INFO
-    org.example: DEBUG
+    org.example: INFO
     org.springframework: INFO

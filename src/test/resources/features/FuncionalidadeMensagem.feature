@@ -1,6 +1,7 @@
 # language: pt
 Funcionalidade: API - Mensagens
 
+  @smoke
   Cenário: Registrar uma nova mensagem
     Quando submeter uma nova mensagem
     Então a mensagem é registrada com sucesso
@@ -24,3 +25,7 @@ Funcionalidade: API - Mensagens
     Dado que uma mensagem já foi publicada
     Quando requisitar a exclusão da mensagem
     Então a mensagem é removida com sucesso
+
+  @ignore
+  Cenário: Em desenvolvimento
+    Dado passo em desenvolvimento

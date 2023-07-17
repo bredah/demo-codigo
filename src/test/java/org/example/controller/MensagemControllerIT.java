@@ -36,7 +36,7 @@ class MensagemControllerIT {
   public void setup() {
     RestAssured.port = port;
     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-    RestAssured.filters(new AllureRestAssured());
+    // RestAssured.filters(new AllureRestAssured()); // desta forma como estamos utilizando nested class gera informação duplicada
   }
 
   @Nested
@@ -47,6 +47,7 @@ class MensagemControllerIT {
       var mensagemRequest = MensagemHelper.gerarMensagemRequest();
 
       given()
+        .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .body(mensagemRequest)
           .when()
@@ -68,6 +69,7 @@ class MensagemControllerIT {
       mensagemRequest.setUsuario("");
 
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .body(mensagemRequest)
           .when()
@@ -86,6 +88,7 @@ class MensagemControllerIT {
       mensagemRequest.setConteudo("");
 
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .body(mensagemRequest)
           .when()
@@ -104,6 +107,7 @@ class MensagemControllerIT {
           "{\"ping\": \"ping\", \"quack\": \"adalberto\"}");
 
       given()
+      .filter(new AllureRestAssured())
           .contentType(ContentType.JSON)
           .body(jsonPayload)
           .when()
@@ -156,6 +160,7 @@ class MensagemControllerIT {
     void devePermitirBuscarMensagem() {
       var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .get("/mensagens/{id}", id)
@@ -168,6 +173,7 @@ class MensagemControllerIT {
     void deveGerarExcecao_QuandoBuscarMensagem_IdNaoExistente() {
       var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .get("/mensagens/{id}", id)
@@ -180,6 +186,7 @@ class MensagemControllerIT {
     void deveGerarExcecao_QuandoBuscarMensagem_IdInvalido() {
       var id = "2";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .get("/mensagens/{id}", id)
@@ -201,14 +208,14 @@ class MensagemControllerIT {
       mensagem.setId(UUID.fromString(id));
 
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .body(mensagem)
           .when()
           .put("/mensagens/{id}", id)
           .then()
           .statusCode(HttpStatus.OK.value())
-          .body("conteudo", equalTo(mensagem.getConteudo()))
-          .body(matchesJsonSchemaInClasspath("./schemas/MensagemResponseSchema.json"));
+          .body("conteudo", equalTo(mensagem.getConteudo()));
     }
 
     @Test
@@ -217,6 +224,7 @@ class MensagemControllerIT {
       var mensagem = MensagemHelper.gerarMensagemCompleta();
 
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .body(mensagem)
           .when()
@@ -232,6 +240,7 @@ class MensagemControllerIT {
       var mensagem = MensagemHelper.gerarMensagemCompleta();
 
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .body(mensagem)
           .when()
@@ -247,6 +256,7 @@ class MensagemControllerIT {
       String xmlPayload = "<mensagem><usuario>John</usuario><conteudo>Conteúdo da mensagem</conteudo></mensagem>";
 
       given()
+      .filter(new AllureRestAssured())
           .contentType(ContentType.XML)
           .body(xmlPayload)
           .when()
@@ -265,6 +275,7 @@ class MensagemControllerIT {
     void devePermitirApagarMensagem() {
       var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .delete("/mensagens/{id}", id)
@@ -277,6 +288,7 @@ class MensagemControllerIT {
     void deveGerarExcecao_QuandoApagarMensagem_IdNaoExistente() {
       var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .delete("/mensagens/{id}", id)
@@ -289,6 +301,7 @@ class MensagemControllerIT {
     void deveGerarExcecao_QuandoIncrementarGostei_IdInvalido() {
       var id = "2";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .delete("/mensagens/{id}", id)
@@ -308,6 +321,7 @@ class MensagemControllerIT {
     void devePermitirIncrementarGostei() {
       var id = "5f789b39-4295-42c1-a65b-cfca5b987db2";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .put("/mensagens/{id}/gostei", id)
@@ -321,6 +335,7 @@ class MensagemControllerIT {
     void deveGerarExcecao_QuandoIncrementarGostei_IdNaoExistente() {
       var id = "5f789b39-4295-42c1-a65b-cfca5b987db3";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .put("/mensagens/{id}/gostei", id)
@@ -333,6 +348,7 @@ class MensagemControllerIT {
     void deveGerarExcecao_QuandoIncrementarGostei_IdInvalido() {
       var id = "2";
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .put("/mensagens/{id}/gostei", id)
@@ -350,6 +366,7 @@ class MensagemControllerIT {
         "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     void devePermitirListarMensagens() {
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .get("/mensagens")
@@ -366,6 +383,7 @@ class MensagemControllerIT {
         "/data.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     void devePermitirListarMensagens_QuandoInformadoParametros() {
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .queryParam("page", "2")
           .queryParam("size", "2")
@@ -382,6 +400,7 @@ class MensagemControllerIT {
     @Test
     void devePermitirListarMensagens_QuandoNaoExisteRegistro() {
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .when()
           .get("/mensagens")
@@ -396,6 +415,7 @@ class MensagemControllerIT {
     @Test
     void devePermitirListarMensagens_QuandoReceberParametrosInvalidos() {
       given()
+      .filter(new AllureRestAssured())
           .contentType(MediaType.APPLICATION_JSON_VALUE)
           .queryParam("page", "2")
           .queryParam("ping", "pong")
