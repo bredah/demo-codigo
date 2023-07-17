@@ -23,7 +23,7 @@ jobs:
         distribution: 'adopt'
         cache: maven
 
-    - name: Executar os testes
+    - name: Compilar projet
       run: mvn compile
 
   test:
@@ -72,22 +72,21 @@ jobs:
       - name: Empacotar aplicação
         run: mvn package
 
-      - name: dependencia -  jq
-        uses: stedolan/jq@v1
-
       - name: Iniciar o aplicativo
         run: java -jar target/demo-codigo*.jar &
       
       - name: Esperar pela inicialização do aplicativo
-        run: |
-          for i in {1..30}; do
-            status=$(curl --request GET 'http://localhost:8080/actuator/health' | jq -r '.status')
-            if [[ "$status" == "UP" ]]; then
-              echo "Aplicativo iniciado com sucesso!"
-              break
-            fi
-            sleep 1
-          done
+        uses: sergeysova/jq-action@v2
+        with:
+          cmd: |
+            for i in {1..30}; do
+              status=$(curl --request GET 'http://localhost:8080/actuator/health' | jq -r '.status')
+              if [[ "$status" == "UP" ]]; then
+                echo "Aplicativo iniciado com sucesso!"
+                break
+              fi
+              sleep 1
+            done
 
       - name: Executar testes de sistema
         run: mvn test -Psystem-test
