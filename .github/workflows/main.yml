@@ -54,6 +54,15 @@ jobs:
         if: ${{ matrix.test-group == 'integration' }}
         run: mvn test -Pintegration-test
     
+      - name: Deploy Allure Report to Github Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          allure_results: target/allure-results
+          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-history
+
   system-test:
     name: System Test
     runs-on: ubuntu-latest
@@ -90,6 +99,16 @@ jobs:
 
       - name: Executar testes de sistema
         run: mvn test -Psystem-test
+
+      - name: Deploy Allure Report to Github Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          allure_results: target/allure-results
+          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-history
+
 
   # sonarqube:
   #   name: Inspeção SonarQube
