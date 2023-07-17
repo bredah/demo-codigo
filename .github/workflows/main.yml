@@ -54,6 +54,14 @@ jobs:
         if: ${{ matrix.test-group == 'integration' }}
         run: mvn test -Pintegration-test
 
+      - name: Get Allure history
+        uses: actions/checkout@v2
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+    
       - name: Deploy Allure Report to Github Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v2
