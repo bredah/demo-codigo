@@ -54,8 +54,8 @@ jobs:
         if: ${{ matrix.test-group == 'integration' }}
         run: mvn test -Pintegration-test
 
-      - name: Allure report
-        uses: afiore/action-allure-report@v0.1.0
+      - name: Allure report V2
+        uses: QuintilianoNery/action-allure-report-V2@0.2.0    
         with:
           results-dir: target/allure-results
 
