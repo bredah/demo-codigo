@@ -96,22 +96,11 @@ jobs:
       - name: Executar testes de sistema
         run: mvn test -Psystem-test
 
-      - name: Get Allure history
-        uses: actions/checkout@v2
-        if: always()
-        continue-on-error: true
+      - name: HTML Preview
+        id: html_preview
+        uses: pavi2410/html-preview-action@v2
         with:
-          ref: gh-pages
-          path: gh-pages
-
-      - name: Deploy Allure Report to Github Pages
-        if: always()
-        uses: peaceiris/actions-gh-pages@v2
-        env:
-          allure_results: target/allure-results
-          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: allure-history
+          html_file: 'target/cucumber-reports/cucumber.html'
 
 
   # sonarqube:
