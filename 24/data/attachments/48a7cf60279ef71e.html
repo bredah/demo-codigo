@@ -1,0 +1,34 @@
+<div>PUT to http://localhost:41583/mensagens/5</div>
+
+<h4>Body</h4>
+<div>
+    <pre class="preformated-text">
+{
+    &quot;id&quot;: &quot;27987173-b22d-4899-8f66-ff61d5aabe9b&quot;,
+    &quot;usuario&quot;: &quot;joe&quot;,
+    &quot;conteudo&quot;: &quot;xpto test&quot;,
+    &quot;dataCriacao&quot;: &quot;2023-07-18 11:32:52.50330&quot;,
+    &quot;dataAlteracao&quot;: &quot;2023-07-18 11:32:52.50330&quot;,
+    &quot;gostei&quot;: 0
+}    </pre>
+</div>
+
+<h4>Headers</h4>
+<div>
+        <div>Accept: */*</div>
+        <div>Content-Type: application/json</div>
+</div>
+
+
+
+<h4>Curl</h4>
+<div>
+curl -v -X PUT &#39;http://localhost:41583/mensagens/5&#39; -H &#39;Accept: */*&#39; -H &#39;Content-Type: application/json&#39; -d &#39;{
+    &quot;id&quot;: &quot;27987173-b22d-4899-8f66-ff61d5aabe9b&quot;,
+    &quot;usuario&quot;: &quot;joe&quot;,
+    &quot;conteudo&quot;: &quot;xpto test&quot;,
+    &quot;dataCriacao&quot;: &quot;2023-07-18 11:32:52.50330&quot;,
+    &quot;dataAlteracao&quot;: &quot;2023-07-18 11:32:52.50330&quot;,
+    &quot;gostei&quot;: 0
+}&#39;
+</div>
