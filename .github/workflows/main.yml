@@ -54,30 +54,10 @@ jobs:
         if: ${{ matrix.test-group == 'integration' }}
         run: mvn test -Pintegration-test
 
-      - name: Get Allure history
-        uses: actions/checkout@v2
-        if: always()
-        continue-on-error: true
+      - name: Allure report
+        uses: afiore/action-allure-report@v0.1.0
         with:
-          ref: gh-pages
-          path: gh-pages
-    
-      - name: Allure Report action from marketplace
-        uses: simple-elf/allure-report-action@master
-        if: always()
-        id: allure-report
-        with:
-          allure_results: target/allure-results
-          gh_pages: gh-pages
-          allure_report: allure-report
-          allure_history: allure-history
-
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v2
-        env:          
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: ./public
+          results-dir: target/allure-results
 
   system-test:
     name: System Test
